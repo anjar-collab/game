@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Game Matematika Auto-Leveling</title>
+<title>Game Matematika Auto-Leveling + Admin</title>
 <style>
 body { font-family: 'Segoe UI', sans-serif; text-align:center; background:linear-gradient(135deg,#4facfe,#00f2fe); color:white; margin:0; padding:0; }
-#startScreen { position:fixed; top:0; left:0; width:100%; height:100%; background:linear-gradient(135deg,#667eea,#764ba2); display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:10; }
-input, button { padding:12px; margin:5px; border-radius:10px; border:none; font-size:16px; }
-button { cursor:pointer; }
+.screen { position:fixed; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:10; }
+#page0 { background:linear-gradient(135deg,#ff9966,#ff5e62); padding:20px; }
+#komenPage { display:none; background:linear-gradient(135deg,#ff9a9e,#fad0c4); padding:20px; }
+#startScreen { display:none; background:linear-gradient(135deg,#667eea,#764ba2); padding:20px; }
 #game { display:none; margin-top:20px; background:rgba(0,0,0,0.2); padding:20px; border-radius:20px; width:95%; max-width:500px; margin-left:auto; margin-right:auto; transition: all 0.3s ease; }
 #level { font-size:18px; margin-bottom:10px; font-weight:bold; }
 #soal { font-size:22px; margin-bottom:20px; transition: all 0.3s ease; }
@@ -19,33 +20,89 @@ button { cursor:pointer; }
 #popup { position:fixed; top:0; left:0; width:100%; height:100%; display:none; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; }
 #popupBox { background:white; color:black; padding:20px; border-radius:15px; width:80%; max-width:300px; }
 #waktu { font-weight:bold; font-size:20px; transition: color 0.3s; }
-.correct { background-color: #4CAF50 !important; color:white; transform: scale(1.2); animation: pop 0.5s forwards; }
-.wrong { background-color: #f44336 !important; color:white; animation: shake 0.3s; }
-#scorePop { position: absolute; font-size: 24px; font-weight: bold; color: yellow; text-shadow: 0 0 5px #fff; animation: floatUp 1s forwards; pointer-events: none; }
-@keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.5); } 100% { transform: scale(1); } }
-@keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
 #muteBtn { position:fixed; top:10px; right:10px; padding:10px; border-radius:50%; font-size:16px; background:rgba(0,0,0,0.5); color:white; border:none; cursor:pointer; z-index:20; }
+button { cursor:pointer; border:none; padding:12px 20px; margin:5px; font-size:16px; font-weight:bold; border-radius:12px; background:rgba(255,255,255,0.3); color:white; transition: all 0.3s ease; }
+button:hover { background:rgba(255,255,255,0.6); transform:scale(1.05); }
+input, textarea { padding:12px; margin:5px; border-radius:12px; border:2px solid white; background: rgba(255,255,255,0.1); color:white; font-size:16px; transition: all 0.3s ease; text-align:center; }
+input:focus, textarea:focus { border-color:#ffeb3b; box-shadow:0 0 10px #ffeb3b; outline:none; }
+textarea { width:90%; max-width:300px; resize:none; }
+#adminForm { margin-top:20px; display:flex; flex-direction:column; align-items:center; }
+#adminForm input { width:200px; }
+#adminForm button { width:150px; }
+h1,h2,h3 { margin:10px; }
 </style>
 </head>
 <body>
 
-<div id="startScreen">
+<!-- PAGE 0 -->
+<div id="page0" class="screen">
+  <h1>🎮 Selamat Datang di Game Matematika</h1>
+  <p>Dibuat oleh: <strong>Anjar😎</strong></p>
+  <button onclick="gotoKomentar()">✏️ Tulis Komentar</button>
+  <button onclick="lanjutTanpaKomentar()">▶️ Lanjut</button>
+
+  <!-- ADMIN FORM -->
+  <div id="adminForm">
+    <input type="password" id="adminKode" placeholder="Kode Admin">
+    <button onclick="masukAdmin()">🛡️ Masuk Admin</button>
+  </div>
+
+  <button onclick="keluarGame()">❌ Keluar</button>
+</div>
+
+<!-- KOMENTAR PAGE -->
+<div id="komenPage" class="screen">
+  <h2>📝 Masukkan Komentar Anda</h2>
+  <textarea id="komentar" placeholder="Tulis komentar..."></textarea>
+  <button onclick="submitKomentar()">📤 Kirim Komentar</button>
+  <button onclick="batalKomentar()">⬅️ Kembali ke Menu Awal</button>
+</div>
+
+<!-- START SCREEN PAGE 1 -->
+<div id="startScreen" class="screen">
   <h1>🎮 Game Matematika Auto-Leveling</h1>
   <input id="nama" placeholder="Nama pemain">
   <button onclick="mulaiGame()">▶️ Mulai Game</button>
+  <button onclick="kembaliPage0()">⬅️ Kembali ke Menu Awal</button>
 </div>
 
+<!-- GAME SCREEN -->
 <div id="game">
   <div id="level">Level: 1</div>
   <h2 id="soal"></h2>
   <div id="jawaban"></div>
   <p>⏱️ Waktu: <span id="waktu">30</span></p>
   <div id="hasil"></div>
+  <button onclick="kembaliPage0()">⬅️ Kembali ke Menu Awal</button>
 </div>
 
+<!-- ADMIN SCREEN -->
+<div id="adminScreen">
+  <h2 style="text-align:center; margin-bottom:20px;">🛡️ Admin Panel</h2>
+
+  <div style="display:flex; gap:20px; flex-wrap:wrap; justify-content:center;">
+
+    <!-- KOMENTAR BOX -->
+    <div style="flex:1; min-width:250px; max-width:300px; background:rgba(255,255,255,0.1); padding:15px; border-radius:15px; overflow-y:auto; height:400px;">
+      <h3 style="text-align:center; margin-bottom:10px;">Komentar Pemain (Live)</h3>
+      <div id="adminKomentar"></div>
+    </div>
+
+    <!-- SKOR BOX -->
+    <div style="flex:1; min-width:250px; max-width:300px; background:rgba(255,255,255,0.1); padding:15px; border-radius:15px; overflow-y:auto; height:400px;">
+      <h3 style="text-align:center; margin-bottom:10px;">Skor Tertinggi Pemain</h3>
+      <table id="adminScore" style="width:100%; border-collapse:collapse; text-align:left;"></table>
+    </div>
+
+  </div>
+
+  <button style="margin-top:20px; display:block; margin-left:auto; margin-right:auto;" onclick="keluarAdmin()">⬅️ Kembali ke Menu Awal</button>
+</div>
+
+<!-- POPUP LEADERBOARD -->
 <div id="popup">
   <div id="popupBox">
-    <h3>🌍 Leaderboard Global</h3>
+    <h3>🌍 Leaderboard Global (Live)</h3>
     <div id="leaderboard"></div>
     <button onclick="tutupPopup()">❌ Tutup</button>
   </div>
@@ -59,16 +116,8 @@ button { cursor:pointer; }
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script>
-// FIREBASE
-const firebaseConfig = {
-  apiKey: "AIzaSyBqC5EJNNG2uOeCcjOSzJxaheWN6bzMHmc",
-  authDomain: "game-16ffc.firebaseapp.com",
-  projectId: "game-16ffc",
-  storageBucket: "game-16ffc.appspot.com",
-  messagingSenderId: "796216243105",
-  appId: "1:796216243105:web:28b7414951fc178fb551e0",
-  measurementId: "G-3748145W49"
-};
+// FIREBASE CONFIG
+const firebaseConfig = { apiKey:"AIzaSyBqC5EJNNG2uOeCcjOSzJxaheWN6bzMHmc", authDomain:"game-16ffc.firebaseapp.com", projectId:"game-16ffc", storageBucket:"game-16ffc.appspot.com", messagingSenderId:"796216243105", appId:"1:796216243105:web:28b7414951fc178fb551e0", measurementId:"G-3748145W49" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
@@ -87,138 +136,69 @@ bgMusic.volume=0.5;
 const muteBtn=document.getElementById("muteBtn");
 const levelEl=document.getElementById("level");
 let isMuted=false;
+let unsubscribeLeaderboard, unsubscribeKomentar, unsubscribeScore;
 
-// Ambil nama dari localStorage jika ada
-if(localStorage.getItem("playerName")){
-  namaEl.value = localStorage.getItem("playerName");
-}
+// Ambil nama dari localStorage
+if(localStorage.getItem("playerName")){ namaEl.value = localStorage.getItem("playerName"); }
 
 // MUSIK
-muteBtn.onclick = () => {
-  if(isMuted){ bgMusic.play(); muteBtn.innerText="🔊"; }
-  else { bgMusic.pause(); muteBtn.innerText="🔇"; }
-  isMuted=!isMuted;
-}
+muteBtn.onclick = () => { if(isMuted){ bgMusic.play(); muteBtn.innerText="🔊"; } else { bgMusic.pause(); muteBtn.innerText="🔇"; } isMuted=!isMuted; }
 
-// MULAI GAME
-function mulaiGame(){
-  if(!namaEl.value){ alert("Masukkan nama!"); return; }
-  localStorage.setItem("playerName", namaEl.value);
-  document.getElementById("startScreen").style.display="none";
-  document.getElementById("game").style.display="block";
-  if(!isMuted) bgMusic.play();
-  resetGame();
-}
+// PAGE0 KOMENTAR
+function gotoKomentar(){ document.getElementById("page0").style.display="none"; document.getElementById("komenPage").style.display="flex"; }
+function batalKomentar(){ document.getElementById("komenPage").style.display="none"; document.getElementById("page0").style.display="flex"; }
+function submitKomentar(){ const komentar=document.getElementById("komentar").value; if(komentar){ db.collection("komentar").add({ komentar: komentar, nama:namaEl.value || "Guest", waktu:Date.now() }); alert("Komentar terkirim!"); } document.getElementById("komenPage").style.display="none"; document.getElementById("startScreen").style.display="flex"; }
+function lanjutTanpaKomentar(){ document.getElementById("page0").style.display="none"; document.getElementById("startScreen").style.display="flex"; }
 
-function resetGame(){
-  skor=0; nomorSoal=1; waktu=30;
-  hasilEl.innerHTML="";
-  clearInterval(timer);
-  mulaiTimer();
-  buatSoal();
-}
+// PAGE1 KEMBALI
+function kembaliPage0(){ document.getElementById("startScreen").style.display="none"; document.getElementById("game").style.display="none"; document.getElementById("page0").style.display="flex"; }
 
-// LEVEL berdasarkan nomor soal
-function getLevel(){ return Math.floor((nomorSoal-1)/5) + 1; }
+// ADMIN PANEL
+function masukAdmin(){ const kode=document.getElementById("adminKode").value; if(kode=="2006"){ document.getElementById("page0").style.display="none"; document.getElementById("adminScreen").style.display="flex"; loadAdminLive(); } else { alert("Kode admin salah!"); } }
+function keluarAdmin(){ document.getElementById("adminScreen").style.display="none"; document.getElementById("page0").style.display="flex"; if(unsubscribeKomentar) unsubscribeKomentar(); if(unsubscribeScore) unsubscribeScore(); }
+function loadAdminLive(){
+  unsubscribeKomentar=db.collection("komentar").orderBy("waktu","desc").limit(50).onSnapshot(snapshot=>{
+    let html="";
+    snapshot.forEach((doc,index)=>{
+      let d=doc.data();
+      let highlight=(index===0)?"background:rgba(255,255,0,0.3); padding:3px; border-radius:5px;":"";
+      html+=`<div style="${highlight}">[${d.nama}] ${d.komentar}</div>`;
+    });
+    document.getElementById("adminKomentar").innerHTML=html;
+  });
 
-// SOAL AUTO-LEVELING MIX SEMUA TIPE
-function buatSoal(){
-  let level = getLevel();
-  levelEl.innerText = "Level: " + level;
-
-  // tingkat kesulitan meningkat tiap level
-  let maxAngka = 10 + level*10;
-  let a=Math.floor(Math.random()*maxAngka)+1;
-  let b=Math.floor(Math.random()*maxAngka)+1;
-  let soal="", jaw=0;
-
-  // tipe soal random
-  let tipe = Math.floor(Math.random()*7);
-  switch(tipe){
-    case 0: soal=`${a} + ${b}`; jaw=a+b; break;
-    case 1: soal=`${a} - ${b}`; jaw=a-b; break;
-    case 2: soal=`${a} × ${b}`; jaw=a*b; break;
-    case 3: soal=`${a*b} ÷ ${b}`; jaw=a; break;
-    case 4: // pecahan sederhana
-      soal=`${a*b}/${b} = ?`; jaw=a; break;
-    case 5: // aljabar
-      soal=`x + ${b} = ${a+b}`; jaw=a; break;
-    case 6: // perkalian besar
-      let c=Math.floor(Math.random()*(level*10)+10);
-      soal=`${a*c} ÷ ${c}`; jaw=a; break;
-  }
-
-  jawabanBenar = jaw;
-  soalEl.innerText=`Soal ${nomorSoal}: ${soal}`;
-  tampilkanJawaban();
-}
-
-// JAWABAN
-function tampilkanJawaban(){
-  jawabanEl.innerHTML="";
-  let pilihan=[jawabanBenar];
-  while(pilihan.length<4){
-    let s = jawabanBenar + Math.floor(Math.random()*10 - 5);
-    if(!pilihan.includes(s)) pilihan.push(s);
-  }
-  pilihan.sort(()=>Math.random()-0.5);
-  pilihan.forEach(n=>{
-    let b=document.createElement("button");
-    b.innerText=n;
-    b.onclick=()=> jawabanKlik(n);
-    jawabanEl.appendChild(b);
+  unsubscribeScore=db.collection("scores").onSnapshot(snapshot=>{
+    let scores = {};
+    snapshot.forEach(doc=>{
+      let d = doc.data();
+      if(!scores[d.nama] || d.skor > scores[d.nama]) scores[d.nama] = d.skor;
+    });
+    let sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+    let html = "<tr><th>Rank</th><th>Nama</th><th>Skor</th></tr>";
+    sorted.forEach(([nama, skor], index)=>{
+      html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.2);">
+                 <td>${index+1}</td>
+                 <td>${nama}</td>
+                 <td>${skor}</td>
+               </tr>`;
+    });
+    document.getElementById("adminScore").innerHTML = html;
   });
 }
 
-function jawabanKlik(n){
-  clickSound.play();
-  if(n===jawabanBenar) skor++;
-  nomorSoal++; buatSoal();
-}
-
-// TIMER
-function mulaiTimer(){
-  clearInterval(timer);
-  timer=setInterval(()=>{
-    waktu--; 
-    document.getElementById("waktu").textContent=waktu;
-    if(waktu<=5) tickSound.play();
-    if(waktu<=0){ clearInterval(timer); selesai(); }
-  },1000);
-}
-
-// SCORE
-function simpanScore(){
-  db.collection("scores").add({ nama:namaEl.value, skor:skor, waktu:Date.now() }).catch(e=>console.error(e));
-}
-
-// LEADERBOARD
-function bukaGlobalScore(){
-  db.collection("scores").orderBy("skor","desc").limit(20)
-    .onSnapshot(snapshot=>{
-      let html=""; let i=1;
-      snapshot.forEach(doc=>{
-        let d=doc.data();
-        html+=`${i++}. ${d.nama} - ${d.skor}<br>`;
-      });
-      leaderboard.innerHTML=html;
-      popup.style.display="flex";
-    });
-}
+// GAME FUNCTION ASLI
+function mulaiGame(){ if(!namaEl.value){ alert("Masukkan nama!"); return; } localStorage.setItem("playerName", namaEl.value); document.getElementById("startScreen").style.display="none"; document.getElementById("game").style.display="block"; if(!isMuted) bgMusic.play(); resetGame(); }
+function resetGame(){ skor=0; nomorSoal=1; waktu=30; hasilEl.innerHTML=""; clearInterval(timer); mulaiTimer(); buatSoal(); }
+function getLevel(){ return Math.floor((nomorSoal-1)/5)+1; }
+function buatSoal(){ let level=getLevel(); levelEl.innerText="Level: "+level; let maxAngka=10+level*10; let a=Math.floor(Math.random()*maxAngka)+1; let b=Math.floor(Math.random()*maxAngka)+1; let soal="",jaw=0; let tipe=Math.floor(Math.random()*7); switch(tipe){ case 0: soal=`${a} + ${b}`; jaw=a+b; break; case 1: soal=`${a} - ${b}`; jaw=a-b; break; case 2: soal=`${a} × ${b}`; jaw=a*b; break; case 3: soal=`${a*b} ÷ ${b}`; jaw=a; break; case 4: soal=`${a*b}/${b} = ?`; jaw=a; break; case 5: soal=`x + ${b} = ${a+b}`; jaw=a; break; case 6: let c=Math.floor(Math.random()*(level*10)+10); soal=`${a*c} ÷ ${c}`; jaw=a; break; } jawabanBenar=jaw; soalEl.innerText=`Soal ${nomorSoal}: ${soal}`; tampilkanJawaban(); }
+function tampilkanJawaban(){ jawabanEl.innerHTML=""; let pilihan=[jawabanBenar]; while(pilihan.length<4){ let s=jawabanBenar+Math.floor(Math.random()*10-5); if(!pilihan.includes(s)) pilihan.push(s); } pilihan.sort(()=>Math.random()-0.5); pilihan.forEach(n=>{ let b=document.createElement("button"); b.innerText=n; b.onclick=()=>jawabanKlik(n); jawabanEl.appendChild(b); }); }
+function jawabanKlik(n){ clickSound.play(); if(n===jawabanBenar) skor++; nomorSoal++; buatSoal(); }
+function mulaiTimer(){ clearInterval(timer); timer=setInterval(()=>{ waktu--; document.getElementById("waktu").textContent=waktu; if(waktu<=5) tickSound.play(); if(waktu<=0){ clearInterval(timer); selesai(); } },1000); }
+function simpanScore(){ db.collection("scores").add({ nama:namaEl.value, skor:skor, waktu:Date.now() }).catch(e=>console.error(e)); }
+function bukaGlobalScore(){ if(unsubscribeLeaderboard) unsubscribeLeaderboard(); unsubscribeLeaderboard=db.collection("scores").orderBy("skor","desc").limit(20).onSnapshot(snapshot=>{ let html=""; let i=1; snapshot.forEach(doc=>{ let d=doc.data(); html+=`${i++}. ${d.nama} - ${d.skor}<br>`; }); leaderboard.innerHTML=html; popup.style.display="flex"; }); }
 function tutupPopup(){ popup.style.display="none"; }
-
-// SELESAI
-function selesai(){
-  clearInterval(timer);
-  simpanScore();
-  jawabanEl.innerHTML="";
-  soalEl.innerHTML="";
-  hasilEl.innerHTML=`
-    <h3>🎯 Skor Akhir: ${skor}</h3>
-    <button onclick="bukaGlobalScore()">🌍 Lihat Skor Global</button>
-    <button onclick="location.reload()">🔁 Mulai Ulang</button>
-  `;
-}
+function selesai(){ clearInterval(timer); simpanScore(); jawabanEl.innerHTML=""; soalEl.innerHTML=""; hasilEl.innerHTML=`<h3>🎯 Skor Akhir: ${skor}</h3><button onclick="bukaGlobalScore()">🌍 Lihat Skor Global</button><button onclick="location.reload()">🔁 Mulai Ulang</button>`; }
+function keluarGame(){ if(confirm("Yakin ingin keluar game?")) window.close(); }
 </script>
 </body>
 </html>
