@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Matematika Auto-Leveling</title>
+<style>
+body { font-family: 'Segoe UI', sans-serif; text-align:center; background:linear-gradient(135deg,#4facfe,#00f2fe); color:white; margin:0; padding:0; }
+#startScreen { position:fixed; top:0; left:0; width:100%; height:100%; background:linear-gradient(135deg,#667eea,#764ba2); display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:10; }
+input, button { padding:12px; margin:5px; border-radius:10px; border:none; font-size:16px; }
+button { cursor:pointer; }
+#game { display:none; margin-top:20px; background:rgba(0,0,0,0.2); padding:20px; border-radius:20px; width:95%; max-width:500px; margin-left:auto; margin-right:auto; transition: all 0.3s ease; }
+#level { font-size:18px; margin-bottom:10px; font-weight:bold; }
+#soal { font-size:22px; margin-bottom:20px; transition: all 0.3s ease; }
+#jawaban { display:grid; grid-template-columns:1fr 1fr; grid-gap:10px; justify-items:center; }
+#jawaban button { width:100px; height:60px; font-size:18px; transition: transform 0.2s; }
+#jawaban button:hover { transform: scale(1.1); }
+#hasil { margin-top:20px; padding:15px; background:rgba(255,255,255,0.2); border-radius:15px; }
+#popup { position:fixed; top:0; left:0; width:100%; height:100%; display:none; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; }
+#popupBox { background:white; color:black; padding:20px; border-radius:15px; width:80%; max-width:300px; }
+#waktu { font-weight:bold; font-size:20px; transition: color 0.3s; }
+.correct { background-color: #4CAF50 !important; color:white; transform: scale(1.2); animation: pop 0.5s forwards; }
+.wrong { background-color: #f44336 !important; color:white; animation: shake 0.3s; }
+#scorePop { position: absolute; font-size: 24px; font-weight: bold; color: yellow; text-shadow: 0 0 5px #fff; animation: floatUp 1s forwards; pointer-events: none; }
+@keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.5); } 100% { transform: scale(1); } }
+@keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
+#muteBtn { position:fixed; top:10px; right:10px; padding:10px; border-radius:50%; font-size:16px; background:rgba(0,0,0,0.5); color:white; border:none; cursor:pointer; z-index:20; }
+</style>
+</head>
+<body>
+
+<div id="startScreen">
+  <h1>🎮 Game Matematika Auto-Leveling</h1>
+  <input id="nama" placeholder="Nama pemain">
+  <button onclick="mulaiGame()">▶️ Mulai Game</button>
+</div>
+
+<div id="game">
+  <div id="level">Level: 1</div>
+  <h2 id="soal"></h2>
+  <div id="jawaban"></div>
+  <p>⏱️ Waktu: <span id="waktu">30</span></p>
+  <div id="hasil"></div>
+</div>
+
+<div id="popup">
+  <div id="popupBox">
+    <h3>🌍 Leaderboard Global</h3>
+    <div id="leaderboard"></div>
+    <button onclick="tutupPopup()">❌ Tutup</button>
+  </div>
+</div>
+
+<audio id="clickSound" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+<audio id="tickSound" src="https://www.soundjay.com/button/sounds/beep-07.mp3"></audio>
+<audio id="bgMusic" src="https://assets.mixkit.co/music/preview/mixkit-happy-music-game-90.mp3" loop></audio>
+<button id="muteBtn">🔊</button>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+// FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyBqC5EJNNG2uOeCcjOSzJxaheWN6bzMHmc",
+  authDomain: "game-16ffc.firebaseapp.com",
+  projectId: "game-16ffc",
+  storageBucket: "game-16ffc.appspot.com",
+  messagingSenderId: "796216243105",
+  appId: "1:796216243105:web:28b7414951fc178fb551e0",
+  measurementId: "G-3748145W49"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// VAR
+let skor=0, nomorSoal=1, waktu=30, timer, jawabanBenar;
+const soalEl=document.getElementById("soal");
+const hasilEl=document.getElementById("hasil");
+const jawabanEl=document.getElementById("jawaban");
+const namaEl=document.getElementById("nama");
+const popup=document.getElementById("popup");
+const leaderboard=document.getElementById("leaderboard");
+const clickSound=document.getElementById("clickSound");
+const tickSound=document.getElementById("tickSound");
+const bgMusic=document.getElementById("bgMusic");
+bgMusic.volume=0.5;
+const muteBtn=document.getElementById("muteBtn");
+const levelEl=document.getElementById("level");
+let isMuted=false;
+
+// Ambil nama dari localStorage jika ada
+if(localStorage.getItem("playerName")){
+  namaEl.value = localStorage.getItem("playerName");
+}
+
+// MUSIK
+muteBtn.onclick = () => {
+  if(isMuted){ bgMusic.play(); muteBtn.innerText="🔊"; }
+  else { bgMusic.pause(); muteBtn.innerText="🔇"; }
+  isMuted=!isMuted;
+}
+
+// MULAI GAME
+function mulaiGame(){
+  if(!namaEl.value){ alert("Masukkan nama!"); return; }
+  localStorage.setItem("playerName", namaEl.value);
+  document.getElementById("startScreen").style.display="none";
+  document.getElementById("game").style.display="block";
+  if(!isMuted) bgMusic.play();
+  resetGame();
+}
+
+function resetGame(){
+  skor=0; nomorSoal=1; waktu=30;
+  hasilEl.innerHTML="";
+  clearInterval(timer);
+  mulaiTimer();
+  buatSoal();
+}
+
+// LEVEL berdasarkan nomor soal
+function getLevel(){ return Math.floor((nomorSoal-1)/5) + 1; }
+
+// SOAL AUTO-LEVELING MIX SEMUA TIPE
+function buatSoal(){
+  let level = getLevel();
+  levelEl.innerText = "Level: " + level;
+
+  // tingkat kesulitan meningkat tiap level
+  let maxAngka = 10 + level*10;
+  let a=Math.floor(Math.random()*maxAngka)+1;
+  let b=Math.floor(Math.random()*maxAngka)+1;
+  let soal="", jaw=0;
+
+  // tipe soal random
+  let tipe = Math.floor(Math.random()*7);
+  switch(tipe){
+    case 0: soal=`${a} + ${b}`; jaw=a+b; break;
+    case 1: soal=`${a} - ${b}`; jaw=a-b; break;
+    case 2: soal=`${a} × ${b}`; jaw=a*b; break;
+    case 3: soal=`${a*b} ÷ ${b}`; jaw=a; break;
+    case 4: // pecahan sederhana
+      soal=`${a*b}/${b} = ?`; jaw=a; break;
+    case 5: // aljabar
+      soal=`x + ${b} = ${a+b}`; jaw=a; break;
+    case 6: // perkalian besar
+      let c=Math.floor(Math.random()*(level*10)+10);
+      soal=`${a*c} ÷ ${c}`; jaw=a; break;
+  }
+
+  jawabanBenar = jaw;
+  soalEl.innerText=`Soal ${nomorSoal}: ${soal}`;
+  tampilkanJawaban();
+}
+
+// JAWABAN
+function tampilkanJawaban(){
+  jawabanEl.innerHTML="";
+  let pilihan=[jawabanBenar];
+  while(pilihan.length<4){
+    let s = jawabanBenar + Math.floor(Math.random()*10 - 5);
+    if(!pilihan.includes(s)) pilihan.push(s);
+  }
+  pilihan.sort(()=>Math.random()-0.5);
+  pilihan.forEach(n=>{
+    let b=document.createElement("button");
+    b.innerText=n;
+    b.onclick=()=> jawabanKlik(n);
+    jawabanEl.appendChild(b);
+  });
+}
+
+function jawabanKlik(n){
+  clickSound.play();
+  if(n===jawabanBenar) skor++;
+  nomorSoal++; buatSoal();
+}
+
+// TIMER
+function mulaiTimer(){
+  clearInterval(timer);
+  timer=setInterval(()=>{
+    waktu--; 
+    document.getElementById("waktu").textContent=waktu;
+    if(waktu<=5) tickSound.play();
+    if(waktu<=0){ clearInterval(timer); selesai(); }
+  },1000);
+}
+
+// SCORE
+function simpanScore(){
+  db.collection("scores").add({ nama:namaEl.value, skor:skor, waktu:Date.now() }).catch(e=>console.error(e));
+}
+
+// LEADERBOARD
+function bukaGlobalScore(){
+  db.collection("scores").orderBy("skor","desc").limit(20)
+    .onSnapshot(snapshot=>{
+      let html=""; let i=1;
+      snapshot.forEach(doc=>{
+        let d=doc.data();
+        html+=`${i++}. ${d.nama} - ${d.skor}<br>`;
+      });
+      leaderboard.innerHTML=html;
+      popup.style.display="flex";
+    });
+}
+function tutupPopup(){ popup.style.display="none"; }
+
+// SELESAI
+function selesai(){
+  clearInterval(timer);
+  simpanScore();
+  jawabanEl.innerHTML="";
+  soalEl.innerHTML="";
+  hasilEl.innerHTML=`
+    <h3>🎯 Skor Akhir: ${skor}</h3>
+    <button onclick="bukaGlobalScore()">🌍 Lihat Skor Global</button>
+    <button onclick="location.reload()">🔁 Mulai Ulang</button>
+  `;
+}
+</script>
+</body>
+</html>
