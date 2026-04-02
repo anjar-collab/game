@@ -332,7 +332,10 @@ function tampilJawaban(){
     btn.innerText=n;
 
     btn.onclick=()=>{
-      if(n===jawabanBenar) skor++;
+      if(n===jawabanBenar){
+  skor++;
+  updateSkorRealtime(); // 🔥 TAMBAH INI
+}
 
       skorEl.innerText="Skor: "+skor;
       rankEl.innerText=getRank(skor);
@@ -358,47 +361,26 @@ function loadLeaderboard(){
     .limit(10)
     .onSnapshot(snapshot=>{
 
-      leaderboardEl.innerHTML = "⏳ Loading...";
-
       let html = "";
       let rank = 1;
-      const namaSendiri = namaInput.value.trim();
 
       snapshot.forEach(doc=>{
         const d = doc.data();
 
-        let badge = "🏅";
-        if(rank === 1) badge = "🥇";
-        else if(rank === 2) badge = "🥈";
-        else if(rank === 3) badge = "🥉";
-
-        let warna = "";
-        if(rank === 1) warna = "color:gold;font-weight:bold;";
-        else if(rank === 2) warna = "color:silver;font-weight:bold;";
-        else if(rank === 3) warna = "color:#cd7f32;font-weight:bold;";
-
-        let highlight = "";
-        if(d.nama && d.nama.toLowerCase() === namaSendiri.toLowerCase()){
-          highlight = "background:yellow;color:black;padding:6px;border-radius:10px;";
-        }
-
         html += `
-          <div class="leaderItem" style="${warna}${highlight}">
-            ${rank}. ${badge} ${d.nama}
+          <div class="leaderItem">
+            ${rank}. 🏆 ${d.nama}
             <br>
-            ⭐ Skor: ${d.skor}
-            | 🎮 Level: ${d.level || 1}
-            | 🔁 ${d.totalGame || 0}x main
+            ⭐ ${d.skor} | 🎮 Lv ${d.level || 1}
           </div>
         `;
 
         rank++;
       });
 
-      leaderboardEl.innerHTML = html;
+      leaderboardEl.innerHTML = html || "Belum ada data";
     });
 }
-  
 
     
 
@@ -694,6 +676,8 @@ function tampilJawabanPvP(){
   while(pilihan.length<4){
     let salah = jawabanBenar + Math.floor(Math.random()*10-5);
     if(!pilihan.includes(salah)) pilihan.push(salah);
+
+    
   }
 
   pilihan.sort(()=>Math.random()-0.5);
@@ -724,6 +708,25 @@ function tampilJawabanPvP(){
 function generateKodeRoom(){
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+
+function updateSkorRealtime(){
+  const nama = namaInput.value.trim();
+  if(!nama) return;
+
+  const userId = nama.toLowerCase();
+  const ref = db.collection("scores").doc(userId);
+
+  ref.set({
+    nama: nama,
+    skor: skor,
+    level: getLevel(),
+    time: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+
+  
+}
+
+
 // ================= INIT =================
 showPage("welcomePage");
 </script>
