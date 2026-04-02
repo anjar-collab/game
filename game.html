@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Game Matematika PvP + Admin</title>
+<title>Game Matematika Anjar</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -15,17 +15,55 @@ body{margin:0;font-family:'Segoe UI',sans-serif;background:linear-gradient(135de
 .container:hover{transform:scale(1.02);}
 input,textarea{width:90%;padding:12px;margin:5px 0;border-radius:15px;border:none;font-size:16px;outline:none;box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);}
 textarea{resize:none;height:60px;}
-button{padding:12px 15px;margin:5px;border:none;border-radius:15px;background:linear-gradient(145deg,#ffffff,#dfe9ff);font-weight:bold;font-size:16px;cursor:pointer;transition:0.2s;box-shadow:0 4px 10px rgba(0,0,0,0.3);}
+button{padding:12px 15px;margin:5px;border:none;border-radius:15px;background:linear-gradient(145deg,#7477bb,#f5f3f3);font-weight:bold;font-size:16px;cursor:pointer;transition:0.2s;box-shadow:0 4px 10px rgba(0,0,0,0.3);}
 button:hover{transform:scale(1.05);background:#ffe082;}
 .hidden{display:none;}
 #jawaban{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
-#jawaban button{padding:18px;font-size:20px;border-radius:15px;background:linear-gradient(145deg,#ffffff,#dfe9ff);box-shadow:0 4px 10px rgba(0,0,0,0.3);}
+#jawaban button{padding:18px;font-size:20px;border-radius:15px;background:linear-gradient(145deg,#ffffff,#06f957);box-shadow:0 4px 10px rgba(0,0,0,0.3);}
 #jawaban button:hover{transform:scale(1.05);background:#ffe082;}
 #leaderboard,#adminPanel{background:white;color:black;padding:10px;border-radius:10px;max-height:200px;overflow:auto;text-align:left;box-shadow:0 4px 10px rgba(0,0,0,0.3);}
 #pvpBoard{display:flex;justify-content:space-between;gap:10px;margin-top:10px;}
 .pvpCol{flex:1;background:rgba(255,255,255,0.8);color:black;padding:10px;border-radius:15px;}
 .pvpCol h3{margin:5px 0;}
 canvas{background:white;border-radius:10px;margin-top:10px;}
+
+.menuGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+
+.menuGrid button{
+  width:100%;
+
+  .menuGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:15px;
+}
+
+.menuGrid button{
+  width:100%;
+  padding:14px;
+  font-size:15px;
+  border-radius:12px;
+}
+
+/* Supaya tombol sejajar tinggi */
+.menuGrid button{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:55px;
+}
+
+.menuGrid button:hover{
+  transform:scale(1.05);
+  transition:0.2s;
+}
+}
 </style>
 </head>
 <body>
@@ -49,6 +87,7 @@ canvas{background:white;border-radius:10px;margin-top:10px;}
   <button id="main">▶️ Main Solo</button>
   <button id="pvpBtn">⚔️ PvP</button>
   <button id="adminBtn">👑 Admin</button>
+  <button id="kembaliWelcome">⬅️ Kembali</button>
 </div>
 
 <!-- LOGIN ADMIN -->
@@ -110,8 +149,13 @@ const firebaseConfig = {
   appId: "1:796216243105:web:28b7414951fc178fb551e0",
   measurementId: "G-3748145W49"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+
+// 🔥 AKTIFKAN OFFLINE (BIAR PERMANEN)
+firebase.firestore().enablePersistence()
+.catch((err)=>console.log("Persistence error:",err));
 
 // ================= VAR =================
 const welcomePage=document.getElementById("welcomePage");
@@ -134,35 +178,50 @@ const skorLawanEl=document.getElementById("skorLawan");
 let skor=0,nomor=1,waktu=30,timer,jawabanBenar;
 let currentRoomId=null,isPlayer2=false;
 
+// ================= SIMPAN NAMA =================
+window.onload = () => {
+  const savedNama = localStorage.getItem("nama");
+  if(savedNama) namaInput.value = savedNama;
+};
+
 // ================= NAVIGASI =================
-document.getElementById("lanjutKeStart").onclick = () => { showPage("startPage"); };
-document.getElementById("keluar").onclick = () => { window.close(); };
+document.getElementById("lanjutKeStart").onclick = () => showPage("startPage");
+document.getElementById("keluar").onclick = () => window.close();
 
 document.getElementById("main").onclick=()=>{
   if(!namaInput.value)return alert("Isi nama!");
   localStorage.setItem("nama",namaInput.value);
-  skorLawanEl.innerText=""; // SOLO: sembunyikan skor lawan
+  skorLawanEl.innerText="";
   showPage("gamePage","solo");
 };
-document.getElementById("pvpBtn").onclick=()=>{showPage("pvpPage");};
-document.getElementById("adminBtn").onclick=()=>{showPage("loginAdminPage");};
-document.getElementById("kembaliStart").onclick=()=>{showPage("startPage"); clearInterval(timer);};
-document.getElementById("kembaliStartPvP").onclick=()=>{showPage("startPage");};
-document.getElementById("kembaliStartAdmin").onclick=()=>{showPage("startPage");};
-document.getElementById("kembaliStartFromAdmin").onclick =()=>{showPage("startPage");};
-document.getElementById("mainLagi").onclick=()=>{showPage("startPage");};
 
-// KOMENTAR
+document.getElementById("pvpBtn").onclick=()=>showPage("pvpPage");
+document.getElementById("adminBtn").onclick=()=>showPage("loginAdminPage");
+document.getElementById("kembaliStart").onclick=()=>{showPage("startPage"); clearInterval(timer);};
+document.getElementById("kembaliStartPvP").onclick=()=>showPage("startPage");
+document.getElementById("kembaliStartAdmin").onclick=()=>showPage("startPage");
+document.getElementById("kembaliStartFromAdmin").onclick =()=>showPage("startPage");
+document.getElementById("mainLagi").onclick=()=>showPage("startPage");
+document.getElementById("kembaliWelcome").onclick = () => showPage("welcomePage");
+
+// ================= KOMENTAR =================
 document.getElementById("kirimKomentar").onclick=()=>{
   if(!namaInput.value||!komentar.value)return alert("Isi dulu!");
-  db.collection("komentar").add({nama:namaInput.value,isi:komentar.value,time:Date.now()});
-  komentar.value=""; alert("Terkirim!");
+  db.collection("komentar").add({
+    nama:namaInput.value,
+    isi:komentar.value,
+    time:Date.now()
+  });
+  komentar.value="";
+  alert("Terkirim!");
 };
 
-// MULAI ULANG SOAL
-document.getElementById("mulaiUlang").onclick=()=>{waktu=30; nomor=1; mulaiTimer(); buatSoal();};
+// ================= GAME =================
+document.getElementById("mulaiUlang").onclick=()=>{
+  waktu=30; nomor=1;
+  mulaiTimer(); buatSoal();
+};
 
-// ================= SHOW PAGE =================
 function showPage(page,mode=null){
   welcomePage.classList.add("hidden");
   startPage.classList.add("hidden");
@@ -172,106 +231,127 @@ function showPage(page,mode=null){
   adminPage.classList.add("hidden");
   hasilPage.classList.add("hidden");
 
-  if(page==="welcomePage") welcomePage.classList.remove("hidden");
-  if(page==="gamePage") gamePage.classList.remove("hidden");
-  if(page==="pvpPage") pvpPage.classList.remove("hidden");
-  if(page==="adminPage") adminPage.classList.remove("hidden");
-  if(page==="loginAdminPage") loginAdminPage.classList.remove("hidden");
-  if(page==="startPage") startPage.classList.remove("hidden");
-  if(page==="hasilPage") hasilPage.classList.remove("hidden");
+  document.getElementById(page).classList.remove("hidden");
 
-  if(page==="gamePage" && mode==="solo"){skor=0; nomor=1; waktu=30; mulai();}
+  if(page==="gamePage" && mode==="solo"){
+    skor=0; nomor=1; waktu=30;
+    mulai();
+  }
 }
 
-// ================= GAME FUNCTIONS =================
 function mulai(){mulaiTimer(); buatSoal(); loadLeaderboard();}
-function mulaiTimer(){clearInterval(timer); timer=setInterval(()=>{waktu--; document.getElementById("waktu").innerText=waktu; if(waktu<=0){clearInterval(timer); selesai();}},1000);}
+function mulaiTimer(){
+  clearInterval(timer);
+  timer=setInterval(()=>{
+    waktu--;
+    document.getElementById("waktu").innerText=waktu;
+    if(waktu<=0){clearInterval(timer); selesai();}
+  },1000);
+}
+
 function getLevel(){return Math.floor((nomor-1)/5)+1;}
-function getRank(s){if(s<5)return"🥉 Bronze"; if(s<10)return"🥈 Silver"; if(s<20)return"🥇 Gold"; return"🔥 Master";}
+function getRank(s){
+  if(s<5)return"🥉 Bronze";
+  if(s<10)return"🥈 Silver";
+  if(s<20)return"🥇 Gold";
+  return"🔥 Master";
+}
 
 function buatSoal(){
-  let level=getLevel(); levelEl.innerText="Level "+level;
-  let max=10+level*10; let a=Math.floor(Math.random()*max)+1; let b=Math.floor(Math.random()*max)+1;
+  let level=getLevel();
+  levelEl.innerText="Level "+level;
+
+  let max=10+level*10;
+  let a=Math.floor(Math.random()*max)+1;
+  let b=Math.floor(Math.random()*max)+1;
+
   let tipe=Math.floor(Math.random()*4);
   if(level<=2) tipe=Math.floor(Math.random()*2);
   else if(level<=4) tipe=Math.floor(Math.random()*3);
+
   let soal,jaw;
+
   if(tipe===0){soal=`${a}+${b}`; jaw=a+b;}
   else if(tipe===1){soal=`${a}-${b}`; jaw=a-b;}
   else if(tipe===2){soal=`${a}×${b}`; jaw=a*b;}
   else{soal=`${a*b}÷${b}`; jaw=a;}
+
   if(level>=7){soal=`(${a}+${b})×2`; jaw=(a+b)*2;}
-  jawabanBenar=jaw; soalEl.innerText=soal; tampilJawaban();
+
+  jawabanBenar=jaw;
+  soalEl.innerText=soal;
+  tampilJawaban();
 }
 
 function tampilJawaban(){
-  jawabanEl.innerHTML=""; let pilihan=[jawabanBenar];
-  while(pilihan.length<4){let salah=jawabanBenar+Math.floor(Math.random()*10-5); if(!pilihan.includes(salah)) pilihan.push(salah);}
+  jawabanEl.innerHTML="";
+  let pilihan=[jawabanBenar];
+
+  while(pilihan.length<4){
+    let salah=jawabanBenar+Math.floor(Math.random()*10-5);
+    if(!pilihan.includes(salah)) pilihan.push(salah);
+  }
+
   pilihan.sort(()=>Math.random()-0.5);
+
   pilihan.forEach(n=>{
-    const btn=document.createElement("button"); btn.innerText=n;
+    const btn=document.createElement("button");
+    btn.innerText=n;
+
     btn.onclick=()=>{
       if(n===jawabanBenar) skor++;
-      skorEl.innerText="Skor: "+skor; rankEl.innerText=getRank(skor);
+
+      skorEl.innerText="Skor: "+skor;
+      rankEl.innerText=getRank(skor);
+
       if(currentRoomId){
         const field=isPlayer2?"skor2":"skor1";
-        db.collection("rooms").doc(currentRoomId).update({[field]:firebase.firestore.FieldValue.increment(1)});
+        db.collection("rooms").doc(currentRoomId)
+          .update({[field]:firebase.firestore.FieldValue.increment(1)});
       }
+
       setTimeout(()=>{nomor++; buatSoal();},300);
     };
+
     jawabanEl.appendChild(btn);
   });
 }
 
-// Leaderboard
+// ================= LEADERBOARD =================
 function loadLeaderboard(){
-  db.collection("scores").orderBy("skor","desc").limit(10).onSnapshot(s=>{
-    let html=""; s.forEach(doc=>{const d=doc.data(); html+=`${d.nama} - ${d.skor}<br>`;});
-    leaderboardEl.innerHTML=html;
-  });
+  db.collection("scores")
+    .orderBy("skor","desc")
+    .limit(10)
+    .onSnapshot(s=>{
+      let html="";
+      s.forEach(doc=>{
+        const d=doc.data();
+        html+=`${d.nama} - ${d.skor}<br>`;
+      });
+      leaderboardEl.innerHTML=html;
+    });
 }
 
-// Selesai
-function selesai(){clearInterval(timer); db.collection("scores").add({nama:namaInput.value, skor:skor, time:Date.now()}); document.getElementById("skorAkhir").innerText="🎯 Skor: "+skor; showPage("hasilPage");}
+// ================= SELESAI =================
+function selesai(){
+  clearInterval(timer);
 
-// ================= PvP =================
-document.getElementById("buatRoom").onclick=()=>{
-  if(!namaInput.value)return alert("Isi nama!");
-  const kode = Math.floor(1000 + Math.random()*9000).toString();
-  db.collection("rooms").doc(kode).set({player1:namaInput.value,skor1:0,status:"waiting"});
-  currentRoomId=kode; isPlayer2=false;
-  document.getElementById("infoRoom").innerText="Room dibuat! Kode: "+kode+" (tunggu lawan masuk...)";
-  listenRoom(kode,true);
-};
-
-document.getElementById("gabungRoom").onclick=()=>{
-  const kode=document.getElementById("kodeRoom").value;
-  db.collection("rooms").doc(kode).get().then(doc=>{
-    if(!doc.exists) return alert("Room tidak ditemukan!");
-    const data=doc.data();
-    if(data.status!=="waiting") return alert("Room sudah penuh!");
-    db.collection("rooms").doc(kode).update({player2:namaInput.value,skor2:0,status:"start"});
-    currentRoomId=kode; isPlayer2=true;
-    document.getElementById("infoRoom").innerText="Berhasil gabung! Mulai game...";
-    listenRoom(kode,false);
+  db.collection("scores").add({
+    nama:namaInput.value,
+    skor:skor,
+    time:Date.now()
   });
-};
 
-function listenRoom(kode,isCreator){
-  db.collection("rooms").doc(kode).onSnapshot(doc=>{
-    const d=doc.data(); if(!d) return;
-    if(d.status==="start"){showPage("gamePage");}
-    if(currentRoomId){
-      if(isPlayer2) skorLawanEl.innerText="Skor Lawan: "+d.skor1;
-      else skorLawanEl.innerText="Skor Lawan: "+d.skor2;
-    }
-  });
+  document.getElementById("skorAkhir").innerText="🎯 Skor: "+skor;
+  showPage("hasilPage");
 }
 
-// ================= ADMIN =================
+// ================= ADMIN (FIX PERMANEN) =================
 const ADMIN_PASSWORD = "admin123";
+
 document.getElementById("loginAdminBtn").onclick = () => {
   const pw = document.getElementById("adminPass").value;
+
   if(pw === ADMIN_PASSWORD){
     showPage("adminPage");
     loadAdmin();
@@ -280,21 +360,63 @@ document.getElementById("loginAdminBtn").onclick = () => {
 };
 
 function loadAdmin(){
-  db.collection("komentar").orderBy("time","desc").onSnapshot(snap=>{
-    let html="<h4>💬 Komentar</h4>";
-    snap.forEach(doc=>{let d=doc.data(); html+=`<div>👤 ${d.nama}: ${d.isi}</div>`;});
-    html+="<hr><h4>🏆 Skor</h4>";
-    db.collection("scores").orderBy("skor","desc").get().then(s=>{
-      let label=[],data=[];
-      s.forEach(doc=>{let d=doc.data(); html+=`<div>${d.nama} - ${d.skor}</div>`; label.push(d.nama); data.push(d.skor);});
-      document.getElementById("adminPanel").innerHTML=html;
-      new Chart(document.getElementById("chart"),{type:"bar",data:{labels:label,datasets:[{label:"Skor",data:data}]}} );
+
+  const adminPanel = document.getElementById("adminPanel");
+
+  let komentarData = [];
+  let skorData = [];
+
+  // KOMENTAR
+  db.collection("komentar")
+    .orderBy("time","desc")
+    .onSnapshot(snap=>{
+      komentarData=[];
+      snap.forEach(doc=>komentarData.push(doc.data()));
+      render();
     });
-  });
+
+  // SKOR
+  db.collection("scores")
+    .orderBy("skor","desc")
+    .onSnapshot(snap=>{
+      skorData=[];
+      snap.forEach(doc=>skorData.push(doc.data()));
+      render();
+    });
+
+  function render(){
+    let html="<h4>💬 Komentar</h4>";
+
+    komentarData.forEach(d=>{
+      html+=`<div>👤 ${d.nama}: ${d.isi}</div>`;
+    });
+
+    html+="<hr><h4>🏆 Skor</h4>";
+
+    let label=[],data=[];
+
+    skorData.forEach(d=>{
+      html+=`<div>${d.nama} - ${d.skor}</div>`;
+      label.push(d.nama);
+      data.push(d.skor);
+    });
+
+    adminPanel.innerHTML=html;
+
+    if(window.chart) window.chart.destroy();
+
+    window.chart=new Chart(document.getElementById("chart"),{
+      type:"bar",
+      data:{
+        labels:label,
+        datasets:[{label:"Skor",data:data}]
+      }
+    });
+  }
 }
 
 // ================= INIT =================
-showPage("welcomePage"); // tampilkan welcome page pertama kali
+showPage("welcomePage");
 </script>
 </body>
 </html>
